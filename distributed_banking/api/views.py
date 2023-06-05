@@ -1,15 +1,20 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest, JsonResponse
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+import json
 import uuid
+import requests
+from . import paxos
 # Create your views here.
 
 # CADA SERVIDOR TERA SEU PROPRIO ID, SERAO 5 (1,2,3,4,5)
-SERVER_ID = 1
-accounts = []
-accounts_uuid = []
-request_ids = []
-request_id = 0
-proposal = (request_id, )
+# SERVER_ID = 1
+# accounts = []
+# accounts_uuid = []
+# request_ids = []
+# request_id = 0
+# proposal = (request_id, )
+
 # class InterceptedRequest(HttpRequest):
     
 #     def __init__(self) -> None:
@@ -17,7 +22,15 @@ proposal = (request_id, )
 
 # PROPOSER, LEARNER, ACCEPTOR
 
-class
+# class Proposal():
+
+#     def __init__(self) -> None:
+#         self.proposal_id = SERVER_ID
+#         ...
+
+#     def propose_to_acceptor(self):
+#         self.proposal_id += 1
+#         requests.post(  )
 
 class Account():
 
@@ -51,13 +64,26 @@ def request_interceptor(request):
         request_id += 1
         return dict({"request_id":request_id,"request_content":request_content})
 
-
+@csrf_exempt
 def index(request):
     if request.method == "GET":
-        return JsonResponse("Hello!", safe=False)
+        return JsonResponse("Selecione um posto no qual deseja realizar a operacao:\n1-Banco A\n2-Banco B\n3-Banco C\n4-Banco D\n5-Banco E", safe=False)
     
     elif request.method == "POST":
-        return JsonResponse({"Dados":"whatever"})
+        print(request.POST)
+        num_banco = json.loads(request.body).get("num_banco")
+        print(num_banco)
+        tipo_operacao = json.loads(request.body).get("tipo_operacao")
+
+        if (tipo_operacao == "consulta"):
+            id_conta = json.loads(request.body).get("id_conta")
+            new_proposal = paxos.Proposer()
+
+
+            return JsonResponse({"Saldo da conta":saldo_conta})
+
+
+        return JsonResponse({"Banco selecionado":num_banco})
     
 def create_new_account(request):
     if request.method == "POST":
