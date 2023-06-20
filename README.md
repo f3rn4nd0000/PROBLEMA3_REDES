@@ -20,3 +20,11 @@ A implementação de um sistema distribuído de operações bancárias utilizand
 Com o sistema distribuído de operações bancárias baseado em Paxos, é possível assegurar a integridade das transações, evitar a duplicação de operações e manter os saldos das contas atualizados e consistentes em todos os servidores. Além disso, o uso do algoritmo Paxos permite que o sistema seja escalável, com a adição de novos servidores para lidar com um aumento na demanda.
 
 Em resumo, a utilização do algoritmo Paxos em um sistema distribuído de operações bancárias proporciona uma solução confiável, segura e consistente, garantindo a integridade das transações e a disponibilidade dos serviços bancários. É uma abordagem essencial para atender às exigências de um ambiente bancário moderno, onde a confiabilidade é fundamental para a satisfação e confiança dos clientes.
+
+### Instruções de execução:
+```
+git clone https://github.com/f3rn4nd0000/PROBLEMA3_REDES.git
+cd PROBLEMA3_REDES
+python - m venv venv
+python manage.py runserver
+```
