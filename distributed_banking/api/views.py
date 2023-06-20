@@ -6,16 +6,24 @@ import requests
 from . import paxos
 from django.forms.models import model_to_dict
 import paho.mqtt.client as mqtt_client
+import uuid
 
 """
 IPS DAS MAQUINAS NO LARSID:
 HOST = '172.16.103.num_maquina'
 """
 
-SERVER1 = "http://127.0.0.1:8001"
+SERVER1 = "http://localhost:8001"
 SERVER2 = "http://localhost:8002"
 SERVER3 = "http://localhost:8003"
 SERVER4 = "http://localhost:8004"
+
+
+class CentralServer():
+
+    def __init__(self) -> None:
+        self.master_queue = []
+        self.special_token = uuid.uuid1()
 
 
 class ServerType():
@@ -72,6 +80,15 @@ accs_in_bank = []
 mirror1      = []
 mirror2      = []
 
+@csrf_exempt
+def all_accs(request):
+    if request.method == "GET":
+        return JsonResponse(accs_in_bank, safe=False)
+
+@csrf_exempt
+def sequence_of_requests(request):
+    if request.method == "GET":
+        return JsonResponse(sequence_of_requests)
 
 @csrf_exempt
 def index(request):
@@ -109,10 +126,13 @@ def index(request):
             print("accs_in_bank")
             print(accs_in_bank)
             try:
-                propose = send_propose(request)
-                print("propose")
-                print(propose)
-                if (propose == 200):
+                propose1 = send_propose(request, SERVER1)
+                propose2 = send_propose(request, SERVER2)
+                propose3 = send_propose(request, SERVER3)
+                propose4 = send_propose(request, SERVER4)
+                print("propose1")
+                print(propose1)
+                if (propose1 == 200):
                     return JsonResponse("Foi sincronizado", safe = False)
             except TypeError as e:
                 print(e)
@@ -121,13 +141,13 @@ def index(request):
             return JsonResponse("Operacao abortada, razao: essa conta nao existe", safe=False)
 
 @csrf_exempt
-def send_propose(request):
+def send_propose(request, url_to_send):
     if request.method == "GET":
         return JsonResponse(accs_in_bank, safe = False)
     if request.method == "POST":
         print("data dentro de SYNC")
         print(accs_in_bank)
-        sync_req = requests.post(url = SERVER1+"/api/receive_propose", data = json.dumps(str(accs_in_bank)))
+        sync_req = requests.post(url = url_to_send+"/api/receive_propose", data = json.dumps(str(accs_in_bank)))
         return sync_req.status_code
 
 @csrf_exempt
@@ -135,17 +155,16 @@ def receive_propose(request):
     if request.method == "POST":
         print("inside recv sync data")
         print(request.body)
-        data = json.dumps(request.body).encode("utf-8")
+        data = json.loads(request.body)
         print(f"dados recebidos do sync req.: {data}")
-        accs_in_bank.append(json.dumps())
+        accs_in_bank.append(json.dumps(data).encode("utf-8"))
         return JsonResponse(accs_in_bank, safe = False)
 
 @csrf_exempt
 def get_state_machine(request):
     if request.method == "GET":
         print(f"dentro de get state machine: {sequence_of_requests}")
-        return JsonResponse(sequence_of_requests, safe = False)
-
+        return JsonResponse({"requests":sequence_of_requests}, safe = False)
 
 @csrf_exempt
 def reach_consensus(request):
@@ -155,24 +174,15 @@ def reach_consensus(request):
         server_3_requests = requests.get(url=SERVER3+"/api/get_state_machine")
         server_4_requests = requests.get(url=SERVER4+"/api/get_state_machine")
 
-        if (server_1_requests == server_2_requests and server_1_requests == server_3_requests and server_1_requests == server_4_requests):
+        print(server_1_requests)
+        print(server_2_requests)
+        print(server_3_requests)
+        print(server_4_requests)
+
+        if ((server_1_requests == server_2_requests) and (server_1_requests == server_3_requests) and (server_1_requests == server_4_requests)):
             return JsonResponse("consensus reached", safe = False)
         else:
-            return JsonResponse("consensus not reached")
-
-
-# def listen_for_other_servers(request):
-#     if request.method == "GET":
-#         requests.post(url = SERVER1+"/data_to_be_returned", data = request_propposed)
-#         # requests.post(url = SERVER2, data = sequence_of_requests)
-#         # requests.post(url = SERVER3, data = sequence_of_requests)
-#         return JsonResponse({"status_code":200,
-#                              "data_posted": str(sequence_of_requests).encode("utf-8")
-#                              })
-    
-#     if request.method == "POST":
-#         sequence_of_requests.append(json.loads(request.body.data))
-
+            return JsonResponse("consensus not reached", safe = False)
 
     
 @csrf_exempt
